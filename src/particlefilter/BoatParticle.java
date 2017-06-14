@@ -58,8 +58,8 @@ public class BoatParticle implements Particle<BoatState,MeasurePoint> {
        
 		x1 = state.x + pdr.x;
 		y1 = state.y + pdr.y;
-		state.x=x1; 	// update state is very important
-		state.y=y1;		//The download version did not do this.
+		state.x=x1; 	// update state is very important this decide the likelihood
+		state.y=y1;		// The download version did not do this.
 		heading1 = state.heading + r.nextGaussian()*0.034; //2 degree;
 		speed1 = state.ground_speed + r.nextGaussian()*1;// 1 m/s
 		//we assume ground speed and angular velocity are not changing (we do not measure acceleration and angular acceleration) 
