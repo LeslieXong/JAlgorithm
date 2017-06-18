@@ -1,7 +1,7 @@
 # JAlgorithm
 Some algorthm used in indoor localization and filter.
 Include:
- #coordinate covert\n
+ #coordinate covert
  #kalman filter
  #particle filter
  #pedometer
