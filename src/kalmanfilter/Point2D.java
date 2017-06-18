@@ -1,4 +1,4 @@
-package kalman;
+package kalmanfilter;
 
 public class Point2D {
 	public double x;

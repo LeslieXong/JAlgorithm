@@ -1,4 +1,4 @@
-package kalman;
+package kalmanfilter;
 
 import java.io.BufferedReader;
 import java.io.File;

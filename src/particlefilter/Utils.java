@@ -2,10 +2,10 @@ package particlefilter;
 
 //some of the code is borrowed from here
 //http://www.movable-type.co.uk/scripts/latlong.html
-//a set of functions
+
 public final class Utils {
 	//helper classes
-//	static double R = 6371; //Mean radius of earth in km
+    //static double R = 6371; //Mean radius of earth in km
 	//semi-minor axis (Earth's center to a pole distance)
 	static double earth_b =  1000*6356.7523142; 
 	//semi-major axis (Earth's center to equator distance)

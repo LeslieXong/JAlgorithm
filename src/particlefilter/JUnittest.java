@@ -44,7 +44,7 @@ public class JUnittest
 			weight.add(1 / SQRTTWOPI * Math.exp(-rn * rn / 2));
 			prior.add(rn);
 		}
-		List<Integer> resampled = SamplingWheel.Sample(weight);
+		List<Integer> resampled = SamplingMethod.Sample(weight);
 		int count = 0;
 		//count number of resampled particles with states < 1
 		for (int i = 0; i < N; i++)

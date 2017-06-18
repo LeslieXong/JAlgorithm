@@ -2,7 +2,7 @@ package pfGUI;
 
 import java.util.Random;
 
-import pfGUIcopy.Utils;
+import pfGUI.Utils;
 
 /**
  *

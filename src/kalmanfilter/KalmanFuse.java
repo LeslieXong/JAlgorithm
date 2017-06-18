@@ -1,4 +1,4 @@
-package kalman;
+package kalmanfilter;
 
 
 public class KalmanFuse extends KalmanBasic

@@ -1,10 +1,9 @@
 package particlefilter;
 
 //The implementation is partially based on this paper
-//http://www.guoqiangmao.com/Publications_files/Mao06Design.pdf
-public class BoatState {
+public class ParticleState {
 	
-	public BoatState(double _x, double _y, double _heading, double _ground_speed)
+	public ParticleState(double _x, double _y, double _heading, double _ground_speed)
 	{
 		x = _x;
 		y = _y;
@@ -18,5 +17,4 @@ public class BoatState {
 	public double heading; // orientation of the boat
 	public double length;
 	public double ground_speed;
-
 }
