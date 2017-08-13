@@ -2,10 +2,9 @@ package particlefilter;
 import java.util.ArrayList;
 import java.util.List;
 
-import particlefilter.Boat;
+import particlefilter.ParticleFeature;
 
 public class pfTest {
-
 	public static void TrackBoat() {
 		LoadData ld=new LoadData("src/particlefilter/test2.csv");
 		List<Point2D> measurePDRList=ld.getMeasurePDRList();
@@ -13,20 +12,20 @@ public class pfTest {
 		List<Point2D> truePosList=ld.getTruePosList();
 			
 		int N = 500;  //particle number
-		BoatParticle[] particles = new BoatParticle[N];
+		Particle[] particles = new Particle[N];
 		
-		FileWrite fw = new FileWrite("src/particlefilter/pf-out.txt");	
+		FileWrite fw = new FileWrite("src/particlefilter/output.txt");	
 		
-		BoatState s;
+		ParticleState s;
 		// create initial particles
 		for (int i = 0; i < N; i++) {
-			s= Boat.NoisBoatState(measurePosList.get(0).x, measurePosList.get(0).y, 0, 0, 0);
-			particles[i] = new BoatParticle(s, 1);
+			s= ParticleFeature.initialParticleState(measurePosList.get(0).x, measurePosList.get(0).y, 0, 0, 0);
+			particles[i] = new Particle(s, 1);
 			//System.out.println("particle state(x,y,heading):" + s.x + "," + s.y + "," + s.heading);
 		}
 
-		BoatParticle[] posterior_particles = new BoatParticle[N];
-		BoatParticle[] posterior_particles1 = new BoatParticle[N];
+		Particle[] posterior_particles = new Particle[N];
+		Particle[] posterior_particles1 = new Particle[N];
 
 		int length = measurePDRList.size();
 		int current_ind=0;
@@ -36,7 +35,7 @@ public class pfTest {
 			Point2D truePos=truePosList.get(current_ind);
 			
 			for (int i = 0; i < N; i++) {
-				posterior_particles1[i] = (BoatParticle) particles[i].ApplyFilter(measurePos,measurePDR);
+				posterior_particles1[i] = (Particle) particles[i].ApplyFilter(measurePos,measurePDR);
 			}
 			
 			// reSample // get weights
@@ -45,10 +44,11 @@ public class pfTest {
 				w.add(posterior_particles1[j].weight);
 			}
 			
-			ArrayList<Integer> rr = SamplingWheel.Sample(w);
+			ArrayList<Integer> rr = SamplingMethod.Sample(w);
 			for (int j = 0; j < N; j++) {
 				posterior_particles[j] = posterior_particles1[rr.get(j)];
 			}
+			
 			//TODO normalisation weight then use weight to get position 
 			//TODO estimate before reSample?
 			

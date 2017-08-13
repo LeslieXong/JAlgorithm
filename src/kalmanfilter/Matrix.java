@@ -1,4 +1,4 @@
-package kalman;
+package kalmanfilter;
 
 class Matrix
 {

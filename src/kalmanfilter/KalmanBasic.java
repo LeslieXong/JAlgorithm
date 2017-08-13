@@ -1,4 +1,4 @@
-package kalman;
+package kalmanfilter;
 
 /**
  * Kalman could estimate more parameter like speed<br/>

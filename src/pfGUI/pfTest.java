@@ -28,7 +28,7 @@ import particlefilter.FileWrite;
 import javax.swing.event.ChangeEvent;
 
 /**
- * Part code from https://github.com/erhs-53-hackers/Particle-Filter/tree/master/src/particlefilter
+ * Encouraged by https://github.com/erhs-53-hackers/Particle-Filter/tree/master/src/particlefilter
  * 
  * @author LeslieXong
  *

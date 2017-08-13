@@ -5,7 +5,8 @@ import java.util.Collections;
 import java.util.List;
 
 
-public class SamplingWheel {
+public class SamplingMethod {
+	
 	public static ArrayList<Integer> Sample(List<Double> weights)
 	{
 		ArrayList<Integer> res = new ArrayList<Integer>();

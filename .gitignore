@@ -1,5 +1,17 @@
+<<<<<<< HEAD
 *.class
 
+=======
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# BlueJ files
+*.ctxt
+
+>>>>>>> ee01c1537805d31b4c4e815db68937765ea896f5
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
@@ -7,6 +19,12 @@
 *.jar
 *.war
 *.ear
+<<<<<<< HEAD
+=======
+*.zip
+*.tar.gz
+*.rar
+>>>>>>> ee01c1537805d31b4c4e815db68937765ea896f5
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
