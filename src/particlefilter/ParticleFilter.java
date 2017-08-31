@@ -1,16 +1,18 @@
-package pfGUI;
+package particlefilter;
 
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import util.Point2D;
+
 public class ParticleFilter {
 
-    Particle[] particles;
+    public Particle[] particles;
     int particlesNum = 0;
     Random random = new Random();
 
-    public ParticleFilter(int numParticles, Point[] landmarks, int width, int height) {
+    public ParticleFilter(int numParticles, Point2D[] landmarks, int width, int height) {
         this.particlesNum = numParticles;
 
         particles = new Particle[numParticles];
@@ -45,7 +47,7 @@ public class ParticleFilter {
         }
         
         float beta = 0f;
-        Particle best = getBestParticle();
+        Particle best = getMapPosition();
         int index = (int) random.nextFloat() * particlesNum;
         for (int i = 0; i < particlesNum; i++) {
             beta += random.nextFloat() * 2f * best.probability;
@@ -75,7 +77,7 @@ public class ParticleFilter {
      * MAP estimation:Max a Posterior
      * @return
      */
-    public Particle getBestParticle() {
+    public Particle getMapPosition() {
         Particle particle = particles[0];
         for (int i = 0; i < particlesNum; i++) {
             if (particles[i].probability > particle.probability) {
@@ -89,7 +91,7 @@ public class ParticleFilter {
      * EAP estimation:expected a posterior
      * @return
      */
-    public Particle getAverageParticle() {
+    public Particle getEapPosition() {
         Particle p = new Particle(particles[0].landmarks, particles[0].worldWidth, particles[0].worldHeight);
         float x = 0, y = 0, orient = 0, prob = 0;
         for(int i=0;i<particlesNum;i++) {

@@ -1,4 +1,4 @@
-package pfGUI;
+package simulator;
 
 /**
  *

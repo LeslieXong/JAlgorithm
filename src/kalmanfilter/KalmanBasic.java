@@ -1,12 +1,14 @@
 package kalmanfilter;
 
+import util.Matrix;
+
 /**
  * Kalman could estimate more parameter like speed<br/>
  * While Least square use redundant observation to estimate less parameter<br/>
  * Model:<br/> 
- * X(n)=F*X(n-1)+Q    (P)<br/>
- * Z=H*X(n)+R         (W)
- * @author sir-h
+ * X(n)=F*X(n-1)+ Q (P)   <br/>
+ * Z   =H*X(n)  + R (W)
+ * @author LeslieXong
  */
 abstract class KalmanBasic
 {
@@ -21,17 +23,16 @@ abstract class KalmanBasic
 		this.obsvNum=_obsvNum;
 		this.stateNum=_stateNum;
 		
-		initialDefaultState();
-		setStateTransitModelF();
-		setObsvModelH();
+		setInitialState();
+		setDefaultModel();
 	}
 
 	/**
 	 * 
-	 * Input new obsvNum dimension observations to update state
+	 * Input new obsvNum dimension observations to filter state
 	 * @param obsv£ºobsvNum*1 matrix
 	 */
-	public Matrix updateState(Matrix obsv)
+	public Matrix filter(Matrix obsv)
 	{
 		if(prioriState==null || prioriErrorCovP==null)
 			throw new  NullPointerException("must iniatal state first");
@@ -55,12 +56,9 @@ abstract class KalmanBasic
 	}
 	
 	/**
-	 * Could initial all state as 0; priori error covariance to diagnoal matrix;<BR/>
-	 * Call:<BR/>1.setState(Matrix state,Matrix covariance) <BR/>
-	 * 2.setProcessNoiseCovQ(Matrix Q) / setProcessNoiseCovQ(double q) <BR/>
-	 * 3.setObsvNoiseCovR(Matrix R) / setObsvNoiseCovR(double r)<BR/>
+	 * Could initial all state as 0; <br>Priori error covariance as diagnoal matrix;<BR/>
 	 */
-	abstract void initialDefaultState();
+	abstract void setInitialState();
 	
 	
 	/**
@@ -70,14 +68,19 @@ abstract class KalmanBasic
 	 * @param q process noise covariance
 	 * @param r transit noise covariance
 	 */
-	public void setState(Matrix state,Matrix covariance)
+	public void setCurrentState(Matrix state,Matrix covariance)
 	{
 		prioriState=state;
 		prioriErrorCovP=covariance;
 	}
 	
 	/**
-	 *  Dim: stateNum*stateNum<BR/>
+	 * set a default model's F and H.
+	 */
+	abstract void setDefaultModel();
+	
+	/**
+	 *  Use for stateTransitModel Dim: stateNum*stateNum <BR/>
 	 *  Big frocessNoiseCov(Compare to ObsvNoiseCov) lead fast converge but sensitive to observation<BR/>
 	 *  If set liable initial state manually <BR/>
 	 */
@@ -86,8 +89,8 @@ abstract class KalmanBasic
 		this.processNoiseCovQ=Q;
 	}
 	/**
-	 *  Dim: stateNum*stateNum<BR/>
-	 *  Big frocessNoiseCov(Compare to ObsvNoiseCov) lead fast converge but sensitive to observation<BR/>
+	 *   Use for stateTransitModel Dim: stateNum*stateNum <BR/>
+	 *  Big processNoiseCov (Compare to ObsvNoiseCov) lead fast converge but sensitive to observation<BR/>
 	 *  If set liable initial state manually <BR/>
 	 */
 	public void setProcessNoiseCovQ(double q)
@@ -96,7 +99,7 @@ abstract class KalmanBasic
 	}
 	
 	/**
-	 * Dim:obsvNum*obsvNum <br>
+	 * Use for ObsvModel Dim:obsvNum*obsvNum <br>
 	 * Small obsvNoiseCov(Compare to ProcessNoiseCov) lead fast converge but sensitive to observation
 	 */
 	public void setObsvNoiseCovR(Matrix R)
@@ -104,7 +107,7 @@ abstract class KalmanBasic
 		this.obsvNoiseCovR=R;
 	}
 	/**
-	 * Dim:obsvNum*obsvNum <br>
+	 * Use for ObsvModel Dim:obsvNum*obsvNum <br>
 	 * Small obsvNoiseCov(Compare to ProcessNoiseCov) lead fast converge but sensitive to observation
 	 */
 	public void setObsvNoiseCovR(double r)
@@ -112,8 +115,6 @@ abstract class KalmanBasic
 		this.obsvNoiseCovR=new Matrix(obsvNum,r);
 	}
 	
-	
-	abstract void setStateTransitModelF();
 	/**
 	 * Dim: stateNum*stateNum
 	 */
@@ -122,9 +123,6 @@ abstract class KalmanBasic
 		this.stateTransitModelF=F;
 	}
 	
-	
-	abstract void setObsvModelH();
-	
 	/**
 	 * Dim: obsvNum*stateNum 
 	 */
@@ -132,6 +130,9 @@ abstract class KalmanBasic
 	{
 		this.obsvModelH=H;
 	}
+	
+	
+	/*******************print function*******************************/
 	
 	void printProcessNoiseCovQ()
 	{

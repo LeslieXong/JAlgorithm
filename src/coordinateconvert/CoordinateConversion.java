@@ -6,8 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 
 *//**
- * 坐标转换通用类 四参数转换 七参数转换 Author: yingxiufeng Project: onemap-parent Date:
- * 2015/1/21 19:30 File: CoordinateConversion (c) Copyright gtmap Corp.2015
+ * 坐标转换通用类 四参数转换 七参数转换 
  *//*
 public final class CoordinateConversion
 {

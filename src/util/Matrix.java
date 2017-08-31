@@ -1,6 +1,6 @@
-package coordinateconvert;
+package util;
 
-class Matrix
+public class Matrix
 {
 	// number of rows and columns
 	private int nr, nc;
@@ -8,7 +8,7 @@ class Matrix
 	private double[][] X;
 
 	// overloaded constructor:double[] to a matrix[1][n]
-	Matrix(double[] a)
+	public Matrix(double[] a)
 	{
 		nr = 1;
 		nc = a.length;
@@ -18,7 +18,7 @@ class Matrix
 	}
 
 	// constructor: double array to a matrix
-	Matrix(double[][] A)
+	public Matrix(double[][] A)
 	{
 		nr = A.length;
 		nc = A[0].length;
@@ -31,7 +31,7 @@ class Matrix
 	}
 
 	// copy constructor: matrix to a matrix
-	Matrix(Matrix A)
+	public Matrix(Matrix A)
 	{
 		nr = A.GetNrow();
 		nc = A.GetNcol();
@@ -46,7 +46,7 @@ class Matrix
 	/**
 	 * overloaded constructor: diagonal matrix
 	 */
-	Matrix(int Nr, double a)
+	public Matrix(int Nr, double a)
 	{
 		nr = Nr;
 		nc = Nr;
@@ -67,7 +67,7 @@ class Matrix
 	 * @param Nc
 	 * @param a
 	 */
-	Matrix(int Nr, int Nc, double a)
+	public Matrix(int Nr, int Nc, double a)
 	{
 		nr = Nr;
 		nc = Nc;
@@ -80,7 +80,7 @@ class Matrix
 	}
 
 	// overloaded constructor:scalar to a matrix
-	Matrix(double a)
+	public Matrix(double a)
 	{
 		nr = 1;
 		nc = 1;
@@ -95,7 +95,7 @@ class Matrix
 	//
 
 	// matrix addition
-	Matrix plus(Matrix Y)
+	public Matrix plus(Matrix Y)
 	{
 		if (nr != Y.GetNrow())
 		{
@@ -117,7 +117,7 @@ class Matrix
 	}
 
 	// matrix subtraction
-	Matrix minus(Matrix Y)
+	public Matrix minus(Matrix Y)
 	{
 		if (nr != Y.GetNrow())
 		{
@@ -139,7 +139,7 @@ class Matrix
 	}
 
 	// matrix multiplication
-	Matrix times(Matrix Y)
+	public Matrix times(Matrix Y)
 	{
 		Matrix XtimesY;
 		if ((nr == 1) && (nc == 1))
@@ -171,7 +171,7 @@ class Matrix
 	}
 
 	// scalar multiplication
-	Matrix times(double Y)
+	public Matrix times(double Y)
 	{
 		Matrix XtimesY = new Matrix(nr, nc, 0);
 		for (int i = 0; i < nr; i++)
@@ -181,7 +181,7 @@ class Matrix
 	}
 
 	// transposition
-	Matrix trans()
+	public Matrix trans()
 	{
 		Matrix B = new Matrix(nc, nr, 0);
 		for (int i = 0; i < nc; i++)
@@ -194,22 +194,22 @@ class Matrix
 	// access to a member elements
 	//
 
-	double value(int r, int c)
+	public double value(int r, int c)
 	{
 		return X[r][c];
 	}
 
-	int GetNrow()
+	public int GetNrow()
 	{
 		return nr;
 	}
 
-	int GetNcol()
+	public int GetNcol()
 	{
 		return nc;
 	}
 
-	void setValue(int i, int j, double a)
+	public void setValue(int i, int j, double a)
 	{
 		X[i][j] = a;
 	}
@@ -218,7 +218,7 @@ class Matrix
 	// utilities
 	//
 
-	void printMatrix(String matrixName)
+	public void printMatrix(String matrixName)
 	{
 		System.out.println(matrixName+":");
 		for (int i = 0; i < nr; i++)
@@ -234,7 +234,7 @@ class Matrix
 	// Cholesky decomposition 乔里斯基分解
 	//
 
-	Matrix backward(Matrix RHS)
+	public Matrix backward(Matrix RHS)
 	{
 		int nrhs = RHS.GetNcol();
 		double temp;
@@ -266,7 +266,7 @@ class Matrix
 		return B;
 	}
 
-	Matrix forward(Matrix RHS)
+	public Matrix forward(Matrix RHS)
 	{
 		int nrhs = RHS.GetNcol();
 		double temp;
@@ -304,7 +304,7 @@ class Matrix
 	 * 因为(HtWinv)t=(WinvH)t 则HtWinv=W.chol(H).trans()
 	 * @return
 	 */
-	Matrix chol(Matrix RHS)
+	public Matrix chol(Matrix RHS)
 	{
 		Matrix B;
 		if (nr == 1)

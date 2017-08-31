@@ -1,4 +1,4 @@
-package pfGUI;
+package simulator;
 
 import java.io.BufferedWriter;
 import java.io.File;

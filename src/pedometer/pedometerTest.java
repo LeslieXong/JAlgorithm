@@ -12,7 +12,7 @@ public class pedometerTest
 {
 	public static void main(String[] args)
 	{
-		List<float[]> accData = readAccData("src//pedometer//100-4.txt");
+		List<float[]> accData = readAccData("src//pedometer//acc.txt");
 		List<Float> data = myDetector(accData);
 		for (int i = 0; i < data.size(); i++)
 		{

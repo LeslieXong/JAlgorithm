@@ -1,6 +1,8 @@
-package originkf;
+package util;
 
- class vector
+import util.Matrix;
+
+class Vector
 {
 	// number of rows
 	private int nr;
@@ -8,7 +10,7 @@ package originkf;
 	private double[] X;
 
 	// constructor: array to a vector
-	vector(double[] a)
+	Vector(double[] a)
 	{
 		nr = a.length;
 		X = new double[nr];
@@ -17,7 +19,7 @@ package originkf;
 	}
 
 	// copy constructor: vector to a vector
-	vector(vector a)
+	Vector(Vector a)
 	{
 		nr = a.GetNrow();
 		X = new double[nr];
@@ -26,7 +28,7 @@ package originkf;
 	}
 
 	// overloaded constructor: constant vector
-	vector(int Nr, double a)
+	Vector(int Nr, double a)
 	{
 		nr = Nr;
 		X = new double[nr];
@@ -35,7 +37,7 @@ package originkf;
 	}
 
 	// overloaded constructor: matrix as a vector
-	vector(matrix A)
+	Vector(Matrix A)
 	{
 		if (A.GetNcol() != 1)
 		{
@@ -49,7 +51,7 @@ package originkf;
 	}
 
 	// overloaded constructor: extract column of matrix as a vector
-	vector(matrix A, int j)
+	Vector(Matrix A, int j)
 	{
 		nr = A.GetNrow();
 		X = new double[nr];
@@ -58,7 +60,7 @@ package originkf;
 	}
 
 	// overloaded constructor: scalar as a vector
-	vector(double a)
+	Vector(double a)
 	{
 		nr = 1;
 		X = new double[1];
@@ -72,14 +74,14 @@ package originkf;
 	//
 
 	// vector addition
-	vector plus(vector Y)
+	Vector plus(Vector Y)
 	{
 		if (nr != Y.GetNrow())
 		{
 			System.out.println("Dimensions not compatible");
 			System.exit(1);
 		}
-		vector XplusY = new vector(nr, 0);
+		Vector XplusY = new Vector(nr, 0);
 		for (int i = 0; i < nr; i++)
 			XplusY.setValue(i, X[i] + Y.value(i));
 
@@ -87,14 +89,14 @@ package originkf;
 	}
 
 	// vector subtraction
-	vector minus(vector Y)
+	Vector minus(Vector Y)
 	{
 		if (nr != Y.GetNrow())
 		{
 			System.out.println("Dimensions not compatible");
 			System.exit(1);
 		}
-		vector XminusY = new vector(nr, 0);
+		Vector XminusY = new Vector(nr, 0);
 		for (int i = 0; i < nr; i++)
 			XminusY.setValue(i, X[i] - Y.value(i));
 
@@ -104,7 +106,7 @@ package originkf;
 	// vector multiplication
 
 	// inner product
-	double inner(vector Y)
+	double inner(Vector Y)
 	{
 		if (nr != Y.GetNrow())
 		{
@@ -119,10 +121,10 @@ package originkf;
 	}
 
 	// outer product
-	matrix outer(vector Y)
+	Matrix outer(Vector Y)
 	{
 		double temp;
-		matrix XtimesY = new matrix(nr, Y.GetNrow(), 0.);
+		Matrix XtimesY = new Matrix(nr, Y.GetNrow(), 0.);
 		for (int i = 0; i < nr; i++)
 			for (int j = 0; j < Y.GetNrow(); j++)
 				XtimesY.setValue(i, j, X[i] * Y.value(j));
@@ -131,9 +133,9 @@ package originkf;
 	}
 
 	// scalar multiplication
-	vector times(double Y)
+	Vector times(double Y)
 	{
-		vector XtimesY = new vector(nr, 0);
+		Vector XtimesY = new Vector(nr, 0);
 		for (int i = 0; i < nr; i++)
 			XtimesY.setValue(i, X[i] * Y);
 

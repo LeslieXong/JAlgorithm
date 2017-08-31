@@ -1,4 +1,5 @@
 package leastsquare;
+import util.*;
 
 /**
  * L=BX+d X的协因数阵为P，L为m个，X为n个 m>=n<BR/>

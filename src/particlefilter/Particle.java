@@ -1,84 +1,148 @@
 package particlefilter;
-import java.util.Collection;
+
 import java.util.Random;
 
-import particlefilter.ParticleFeature;
+import simulator.Utils;
+import util.Point2D;
 
+/**
+ *
+ * @author  LeslieXong
+ */
 public class Particle {
-	
-	ParticleState state;
-	double weight;
-	double dt = 0.5; //sec
+    public float forwardNoise, orientationNoise, senseNoise; //stand deviation
+    public float x, y, orientation;
+    public int worldWidth;
+    public int worldHeight;
+    public double probability = 0;
+    public Point2D[] landmarks;
+    Random random;
+    
+    /**
+     * Default constructor for a particle
+     * 
+     * @param landmarks Point array of landmark points for the particle
+     * @param width width of the particle's world in pixels
+     * @param height height of the particle's world in pixels
+     */
+    public Particle(Point2D[] landmarks, int width, int height) {
+        this.landmarks = landmarks;
+        this.worldWidth = width;
+        this.worldHeight = height;
+        random = new Random();
+        x = random.nextFloat() * width;
+        y = random.nextFloat() * height;
+        orientation = random.nextFloat() * 2f * ((float)Math.PI);
+        forwardNoise = 0f;
+        orientationNoise = 0f;
+        senseNoise = 0f;        
+    }
+    
+    /**
+     * Sets the position of the particle and its relative probability
+     * 
+     * @param x new x position of the particle
+     * @param y new y position of the particle
+     * @param orientation new orientation of the particle, in radians
+     * @param prob new probability of the particle between 0 and 1
+     * @throws Exception 
+     */
+    public void set(float x, float y, float orientation, double prob) throws Exception {
+        if(x < 0 || x >= worldWidth) {
+            throw new Exception("X coordinate out of bounds");
+        }
+        if(y < 0 || y >= worldHeight) {
+            throw new Exception("Y coordinate out of bounds");
+        }
+        if(orientation < 0 || orientation >= 2 * Math.PI) {
+            throw new Exception("X coordinate out of bounds");
+        }
+        this.x = x;
+        this.y = y;
+        this.orientation = orientation;
+        this.probability = prob;
+    }
+    
+    /**
+     * Sets the noise of the particles measurements and movements
+     * 
+     * @param Fnoise noise of particle in forward movement
+     * @param Onoise noise of particle in direction measurement
+     * @param Snoise noise of particle in sensing position
+     */
+    public void setNoise(float Fnoise, float Onoise, float Snoise) {
+        this.forwardNoise = Fnoise;
+        this.orientationNoise = Onoise;
+        this.senseNoise = Snoise;
+    }
+    
+ 
+    /**
+     * Moves the particle's position(propagate)
+     * TODO INS error should consider system error other than random error
+     * @param orient value, in radians
+     * @param forward move value, must be >= 0
+     */
+    public void move(float orient, float forward) throws Exception {
+        if(forward < 0) {
+            throw new Exception("target cannot move backwards");
+        }
+        
+        orientation = orient + (float)random.nextGaussian() * orientationNoise; //currently turn is direction
+        orientation = circle(orientation, 2f * (float)Math.PI);
+        
+        double dist = forward + random.nextGaussian() * forwardNoise;
+        //TODO ins distance error should be correlated with length
+        //double dist = forward + forward*random.nextGaussian() * forwardNoise;
+        
+        x += Math.cos(orientation) * dist;
+        y += Math.sin(orientation) * dist;
+        x = circle(x, worldWidth);
+        y = circle(y, worldHeight);
+    }
+    
+    /**
+     * Use senseNoise to simulate the distance measurement of the particle to each of its landmarks
+     * 
+     * @return a float array of distances to landmarks
+     */
+    public float[] simulateSense() {
+        float[] ret = new float[landmarks.length];
+        
+        for(int i=0;i<landmarks.length;i++){
+            float dist = (float) Utils.distance(x, y, landmarks[i].x, landmarks[i].y);
+            ret[i] = dist + (float)random.nextGaussian() * senseNoise;
+        }       
+        return ret;
+    }    
+    
+    
+    /**
+     * Calculates the probability of particle based on measurement
+     * 
+     * @param measurement distance measurements 
+     * @return the probability of the particle being correct, between 0 and 1
+     */
+    public double likelihood(float[] measurement) {
+        double likeli = 1.0;
+        for(int i=0;i<landmarks.length;i++) {
+            float dist = (float) Utils.distance(x, y, landmarks[i].x, landmarks[i].y);            
+            likeli *= Utils.gaussianPdf(dist, senseNoise, measurement[i]);            
+        }      
+        
+        probability = likeli;
+        return likeli;
+    }
 
-	public Particle(ParticleState s, double w)
-	{
-		this.state = s;
-		this.weight = w;
-	}
-	
-	//dt is time step
-	ParticleState Propagate(double dt)
-	{
-		Random r = new Random();
-		double x1,y1,dx,dy, heading1, speed1; 
-		double d = state.ground_speed*dt; //distance traveled
-        dy = -d * Math.sin(2*Math.PI-Math.PI*state.heading/180);
-        dx = d * Math.cos(2*Math.PI-Math.PI*state.heading/180);
-		y1 = state.y + (dy*180)/(Utils.R*Math.PI*Math.cos(state.x*Math.PI/180));
-		x1 = state.x + (dx*180)/(Utils.R*Math.PI);
-		heading1 = state.heading + r.nextGaussian()*0.034; //2 degree;
-		speed1 = state.ground_speed + r.nextGaussian()*1;// 1 m/s
-		//we assume ground speed and angular velocity are not changing (we do not measure acceleration and angular acceleration) 
-		return new ParticleState(x1, y1, heading1, speed1);		
-	}
-	
-
-	public Particle ApplyFilter(Collection<Point2D> m) {
-		//propagate
-		ParticleState state1 = Propagate(dt);
-		double weight1 = 1.0;
-		for (Point2D item : m)
-		{
-			weight1 *= this.Likelihood(item,ParticleFeature.pos_std*ParticleFeature.pos_std);
-		}
-		return new Particle(state1, weight1);
-	}
-	
-
-	ParticleState Propagate(Point2D pdr)
-	{
-		Random r = new Random();
-		double x1,y1, heading1, speed1; 
-       
-		x1 = state.x + pdr.x;
-		y1 = state.y + pdr.y;
-		state.x=x1; 	// update state is very important this decide the likelihood
-		state.y=y1;		// The download version did not do this.
-		heading1 = state.heading + r.nextGaussian()*0.034; //2 degree;
-		speed1 = state.ground_speed + r.nextGaussian()*1;// 1 m/s
-		//we assume ground speed and angular velocity are not changing (we do not measure acceleration and angular acceleration) 
-		return new ParticleState(x1, y1, heading1, speed1);		
-	}
-	
-	public Particle ApplyFilter(Point2D pos,Point2D pdr) {
-		ParticleState state1 = Propagate(pdr);
-		double weight1 = 1.0 ;
-		
-		weight1 *= this.Likelihood(pos, ParticleFeature.pos_std*ParticleFeature.pos_std);
-		
-		return new Particle(state1, weight1);
-	}
-	
-	
-	/**
-	 * probability of this this measurement generate this particle state,likelihood
-	 */
-	public double Likelihood(Point2D m, double var)
-	{
-		double l = 1.0;
-		l *= Utils.dnorm(state.x, m.x, var);  //naive bayes.
-		l *= Utils.dnorm(state.y, m.y, var);
-		return l;		
-	}
-	
-}	
+    private float circle(float num, float length) {         
+        while(num > length - 1) num -= length;
+        while(num < 0) num += length;
+        return num;       
+    }
+    
+    @Override
+    public String toString() {
+        return "[x=" + x + " y=" + y + " orient=" + Math.toDegrees(orientation) + " prob=" +probability +  "]";
+    }
+    
+}
