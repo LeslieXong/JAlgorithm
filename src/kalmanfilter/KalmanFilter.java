@@ -37,7 +37,7 @@ public class KalmanFilter extends KalmanBasic
 	void setInitialState()
 	{
 		Matrix prioriState=new Matrix(stateNum,1,0);
-		Matrix prioriErrorCovP=new Matrix(stateNum,1);
+		Matrix prioriErrorCovP=new Matrix(stateNum,1.0);//should set this big for converge.
 	
 		setCurrentState(prioriState, prioriErrorCovP);
 	}

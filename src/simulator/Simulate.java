@@ -125,6 +125,7 @@ public class Simulate extends JFrame
 		kfError = 0;
 		mleError = 0;
 		random = new Random();
+		kalmanFilter=null;
 
 		truePosition = new LinkedList<Point2D>();
 		kfPosition = new LinkedList<Point2D>();
@@ -305,7 +306,7 @@ public class Simulate extends JFrame
 
 						double[][] pdr = { { deltax, 0 }, { 0, deltay } };
 						kalmanFilter.setStateTransitModelF(new Matrix(pdr));
-						//kalmanFilter.setProcessNoiseCovQ(foward*moveNoise); //Set transit Noise about distance.
+						kalmanFilter.setProcessNoiseCovQ(moveNoise); //Set transit Noise about distance.
 
 						particleFilter.move(direction, foward);
 					} else
@@ -332,10 +333,10 @@ public class Simulate extends JFrame
 					if (kalmanFilter == null)
 					{
 						kalmanFilter = new KalmanFilter(2, 2);
-						kalmanFilter.setCurrentState(zMatrix, new Matrix(2, 0.5)); //TODO prior error
+						kalmanFilter.setCurrentState(zMatrix, new Matrix(2, senseNoise)); //TODO prior error
 					} else
 					{
-						//kalmanFilter.setObsvNoiseCovR(senseNoise);
+						kalmanFilter.setObsvNoiseCovR(senseNoise);
 						Matrix state = kalmanFilter.filter(zMatrix);
 						Point2D pos = new Point2D(state.value(0, 0), state.value(1, 0));
 						kfPosition.add(pos);
