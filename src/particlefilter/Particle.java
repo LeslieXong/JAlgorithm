@@ -9,14 +9,14 @@ import util.Point2D;
  *
  * @author  LeslieXong
  */
-public class Particle {
-    public float forwardNoise, orientationNoise, senseNoise; //stand deviation
-    public float x, y, orientation;
-    public int worldWidth;
-    public int worldHeight;
+public class Particle extends Point2D{
+    public float senseStd; //stand deviation
+    public float orientation;
+    public float worldWidth;
+    public float worldHeight;
     public double probability = 0;
     public Point2D[] landmarks;
-    Random random;
+    private Random random;
     
     /**
      * Default constructor for a particle
@@ -25,7 +25,7 @@ public class Particle {
      * @param width width of the particle's world in pixels
      * @param height height of the particle's world in pixels
      */
-    public Particle(Point2D[] landmarks, int width, int height) {
+    public Particle(Point2D[] landmarks, float width, float height) {
         this.landmarks = landmarks;
         this.worldWidth = width;
         this.worldHeight = height;
@@ -33,12 +33,10 @@ public class Particle {
         x = random.nextFloat() * width;
         y = random.nextFloat() * height;
         orientation = random.nextFloat() * 2f * ((float)Math.PI);
-        forwardNoise = 0f;
-        orientationNoise = 0f;
-        senseNoise = 0f;        
+        senseStd = 0f;        
     }
-    
-    /**
+
+	/**
      * Sets the position of the particle and its relative probability
      * 
      * @param x new x position of the particle
@@ -70,10 +68,8 @@ public class Particle {
      * @param Onoise noise of particle in direction measurement
      * @param Snoise noise of particle in sensing position
      */
-    public void setNoise(float Fnoise, float Onoise, float Snoise) {
-        this.forwardNoise = Fnoise;
-        this.orientationNoise = Onoise;
-        this.senseNoise = Snoise;
+    public void setSenseNoise(float Snoise) {
+        this.senseStd = Snoise;
     }
     
  
@@ -88,34 +84,14 @@ public class Particle {
             throw new Exception("target cannot move backwards");
         }
         
-        orientation = orient + (float)random.nextGaussian() * orientationNoise; //currently turn is direction
+        orientation = orient;
         orientation = circle(orientation, 2f * (float)Math.PI);
         
-        double dist = forward + random.nextGaussian() * forwardNoise;
-        //TODO ins distance error should be correlated with length
-        //double dist = forward + forward*random.nextGaussian() * forwardNoise;
-        
-        x += Math.cos(orientation) * dist;
-        y += Math.sin(orientation) * dist;
+        x += Math.cos(orientation) * forward;
+        y += Math.sin(orientation) * forward;
         x = circle(x, worldWidth);
         y = circle(y, worldHeight);
     }
-    
-    /**
-     * Use senseNoise to simulate the distance measurement of the particle to each of its landmarks
-     * 
-     * @return a float array of distances to landmarks
-     */
-    public float[] simulateSense() {
-        float[] ret = new float[landmarks.length];
-        
-        for(int i=0;i<landmarks.length;i++){
-            float dist = (float) Utils.distance(x, y, landmarks[i].x, landmarks[i].y);
-            ret[i] = dist + (float)random.nextGaussian() * senseNoise;
-        }       
-        return ret;
-    }    
-    
     
     /**
      * Calculates the probability of particle based on measurement
@@ -127,13 +103,13 @@ public class Particle {
         double likeli = 1.0;
         for(int i=0;i<landmarks.length;i++) {
             float dist = (float) Utils.distance(x, y, landmarks[i].x, landmarks[i].y);            
-            likeli *= Utils.gaussianPdf(dist, senseNoise, measurement[i]);            
+            likeli *= Utils.gaussianPdf(dist, senseStd, measurement[i]);            
         }      
         
         probability = likeli;
         return likeli;
     }
-
+    
     private float circle(float num, float length) {         
         while(num > length - 1) num -= length;
         while(num < 0) num += length;

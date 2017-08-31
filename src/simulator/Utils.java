@@ -1,5 +1,9 @@
 package simulator;
 
+import java.util.Random;
+
+import util.Point2D;
+
 /**
  *
  * @author LeslieXong
@@ -17,4 +21,21 @@ public class Utils
 				/ Math.sqrt(2.0 * Math.PI * Math.pow(std, 2));
 	}
 	
+	
+	  /**
+     * Use senseNoise to simulate the distance measurement of the particle to each of its landmarks
+     * 
+     * @return a float array of distances to landmarks
+     */
+    public static float[] simulateSense(Point2D[] landmarks,float senseNoise,Point2D currentPosition) {
+        float[] ret = new float[landmarks.length];
+        Random random =new Random();
+        
+        for(int i=0;i<landmarks.length;i++){
+            float dist = (float) Utils.distance(currentPosition.x, currentPosition.y, landmarks[i].x, landmarks[i].y);
+            ret[i] = dist + (float)random.nextGaussian() * senseNoise;
+        }       
+        return ret;
+    }    
+    
 }

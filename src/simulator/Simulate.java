@@ -9,10 +9,13 @@ import javax.swing.JButton;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.List;
+
 import javax.swing.JTextField;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.util.LinkedList;
+import java.util.Random;
 import java.awt.event.ActionEvent;
 import javax.swing.JLabel;
 import javax.swing.GroupLayout;
@@ -45,9 +48,9 @@ public class Simulate extends JFrame
 	private static final long serialVersionUID = 1L;
 
 	private ParticleFilter particleFilter;
-
 	private ParticleFilter mleEstimator;//Use this to get EAP position of distance measurement alone,without INS
 	private Particle insEstimator;
+	private Random random;
 
 	private KalmanFilter kalmanFilter;
 
@@ -56,9 +59,11 @@ public class Simulate extends JFrame
 			new Point2D(630, 140f), new Point2D(337f, 42f) };
 
 	final int PARTICLES_NUM = 3000;
-	final int WORLD_WIDTH = 750, WORLD_HEIGHT = 500;
+	final float WORLD_WIDTH = 75f, WORLD_HEIGHT = 50f;
 	final int G_MARGIN_X = 12, G_MARGIN_Y = 35;
 	final float SCALE = 10f;  //pixel per meter
+	int drawWidth;
+	int drawHeight;
 
 	private Image image;
 	private Graphics2D graphics;
@@ -78,7 +83,7 @@ public class Simulate extends JFrame
 	private boolean showParticles = true;
 
 	private float moveNoise = 1;
-	private float orientNoise = 2;
+	private float orientNoise = 5;
 	private float senseNoise = 3;
 
 	private LinkedList<Point2D> truePosition = new LinkedList<Point2D>();
@@ -119,6 +124,7 @@ public class Simulate extends JFrame
 		pfError = 0;
 		kfError = 0;
 		mleError = 0;
+		random = new Random();
 
 		truePosition = new LinkedList<Point2D>();
 		kfPosition = new LinkedList<Point2D>();
@@ -127,18 +133,19 @@ public class Simulate extends JFrame
 		insPosition = new LinkedList<>();
 
 		insEstimator = new Particle(landmarks, WORLD_WIDTH, WORLD_HEIGHT);
-		insEstimator.setNoise(moveNoise, orientNoise, senseNoise);
-
-		image = new BufferedImage(WORLD_WIDTH, WORLD_HEIGHT, BufferedImage.BITMASK);
-		graphics = (Graphics2D) image.getGraphics();
+		insEstimator.setSenseNoise(senseNoise);
 
 		particleFilter = new ParticleFilter(PARTICLES_NUM, landmarks, WORLD_WIDTH, WORLD_HEIGHT);
-		particleFilter.setNoise(moveNoise, orientNoise, senseNoise);
+		particleFilter.setSenseNoise(senseNoise);
 
 		mleEstimator = new ParticleFilter(PARTICLES_NUM, landmarks, WORLD_WIDTH, WORLD_HEIGHT);
-		mleEstimator.setNoise(moveNoise, orientNoise, senseNoise);
+		mleEstimator.setSenseNoise(senseNoise);
 
-		graphics.drawRect(0, 0, WORLD_WIDTH - 1, WORLD_HEIGHT - 1);
+		drawWidth = (int) (WORLD_WIDTH * SCALE);
+		drawHeight = (int) (WORLD_HEIGHT * SCALE);
+		image = new BufferedImage(drawWidth, (int) drawHeight, BufferedImage.BITMASK);
+		graphics = (Graphics2D) image.getGraphics();
+		graphics.drawRect(0, 0, drawWidth - 1, drawHeight - 1);
 	}
 
 	@Override
@@ -147,87 +154,57 @@ public class Simulate extends JFrame
 		paint(g);
 	}
 
+	private void drawPoints(boolean ifdraw, Color color,Object[] points, int r)
+	{
+		if(ifdraw)
+		{
+			graphics.setPaint(color);
+			for (Object o : points)
+			{
+				Point2D p=(Point2D) o;
+				graphics.fillOval((int) (p.x * SCALE)-r/2, (int) (p.y * SCALE)-r/2, r, r);
+			}
+		}
+	}
+	
 	@Override
 	public void paint(Graphics g)
 	{
 		super.paint(g);
 
 		/* Draw simulation environment ****************************************/
-		graphics.clearRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+		graphics.clearRect(0, 0, drawWidth, drawHeight);
 		graphics.setPaint(Color.white);
-		graphics.drawRect(0, 0, WORLD_WIDTH - 1, WORLD_HEIGHT - 1);
-
-		graphics.setPaint(Color.red);
-		graphics.drawString(String.format("X( Width ): %.1fm", WORLD_WIDTH / SCALE), 10, 20);
-		graphics.drawString(String.format("Y( Height ):%.1fm", WORLD_HEIGHT / SCALE), 10, 40);
-
-		/* Draw all particles *************************************************/
-		if (showParticles)
-		{
-			graphics.setPaint(Color.PINK);
-			for (Particle p : particleFilter.particles)
-			{
-				graphics.drawRect((int) p.x, (int) p.y, 1, 1);
-			}
-		}
+		graphics.drawRect(0, 0, drawWidth - 1, drawHeight - 1);
 
 		/* Draw all landmarks *************************************************/
-		graphics.setPaint(Color.CYAN);
-		for (Point2D p : landmarks)
-		{
-			graphics.fillOval((int) p.x - 10, (int) p.y - 10, 15, 15);
-		}
-
-		if (showMLE)
-		{
-			graphics.setPaint(Color.YELLOW);
-			for (Point2D p : mlePosition)
-			{
-				graphics.fillOval((int) p.x - 10, (int) p.y - 10, 15, 15);
-			}
-		}
-
+		drawPoints(true, Color.CYAN, landmarks, 15);
 		/* Draw the true trajectory ********************************************/
-		graphics.setPaint(Color.RED);
-		for (Point2D p : truePosition)
-		{
-			graphics.fillOval((int) p.x - 5, (int) p.y - 5, 10, 10);
-		}
+		drawPoints(true, Color.RED, truePosition.toArray(), 15);
 
-		/* Show the best particle *********************************************/
-		if (showKF)
+		/* Draw all particles *************************************************/
+		int size=particleFilter.particles.length;
+		Point2D[] particles=new Point2D[size];
+		for (int i=0;i<size;i++)
 		{
-			graphics.setPaint(Color.GREEN);
-			for (Point2D p : kfPosition)
-			{
-				graphics.fillOval((int) p.x - 5, (int) p.y - 5, 10, 10);
-			}
+			particles[i]=new Point2D(particleFilter.particles[i].x,particleFilter.particles[i].y);
 		}
-
-		/* Show the average particle ******************************************/
-		if (showPF)
+		drawPoints(showParticles, Color.PINK, particles, 2);
+		
+		drawPoints(showMLE, Color.YELLOW, mlePosition.toArray(), 10);
+		drawPoints(showKF, Color.GREEN, kfPosition.toArray(), 10);
+		drawPoints(showPF, Color.BLUE, pfPosition.toArray(), 10);
+		drawPoints(showINS, Color.magenta, insPosition.toArray(), 10);
+	
+		/* Draw current position info ********************************************/
+		if (truePosition.size() > 0)
 		{
-			graphics.setPaint(Color.BLUE);
-			for (Point2D p : pfPosition)
-			{
-				graphics.fillOval((int) p.x - 5, (int) p.y - 5, 10, 10);
-			}
-		}
-
-		/* Show the ins ******************************************/
-		if (showINS)
-		{
-			graphics.setPaint(Color.magenta);
-			for (Point2D p : insPosition)
-			{
-				graphics.fillOval((int) p.x - 5, (int) p.y - 5, 10, 10);
-			}
-		}
-
-		if (truePosition.size() != 0)
-		{
+			graphics.setPaint(Color.red);
+			graphics.drawString(String.format("X( Width: %.1fm)  %.1f", WORLD_WIDTH, truePosition.getLast().x), 10, 20);
+			graphics.drawString(String.format("Y( Height: %.1fm) %.1f", WORLD_HEIGHT, truePosition.getLast().y), 10,
+					40);
 			txtNotice.setText(
-					String.format("MLE:%.2f\nINS:%.2f \nKF:%.2f\nPF:%.2f\n", mleError, insError, kfError, pfError));
+					String.format("MLE:%.2fm\nINS:%.2fm \nKF:%.2fm\nPF:%.2fm\n", mleError, insError, kfError, pfError));
 		}
 
 		g.drawImage(image, G_MARGIN_X, G_MARGIN_Y, rootPane);
@@ -236,7 +213,7 @@ public class Simulate extends JFrame
 	private void saveResult()
 	{
 		txtNotice.setText("Saving...");
-		String file = "src/pfGUI/pf-out.csv";
+		String file = "src/pfGUI/simulate-out.csv";
 		FileWrite fw = new FileWrite(file);
 		String c = String.format("True,%.2f,MLE,%.2f,KF,%.2f,PF,%.2f,INS,%.2f\n", 0f, mleError, kfError, pfError,
 				insError);
@@ -244,38 +221,36 @@ public class Simulate extends JFrame
 		for (int i = 0; i < truePosition.size(); i++)
 		{
 			String s = String.format("%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\n",
-					truePosition.get(i).x / SCALE, truePosition.get(i).y / SCALE, mlePosition.get(i).x / SCALE,
-					mlePosition.get(i).y / SCALE,
-					kfPosition.get(i).x / SCALE, kfPosition.get(i).y / SCALE, pfPosition.get(i).x / SCALE,
-					pfPosition.get(i).y / SCALE,
-					insPosition.get(i).x / SCALE, insPosition.get(i).y / SCALE);
+					truePosition.get(i).x, truePosition.get(i).y, mlePosition.get(i).x,
+					mlePosition.get(i).y,kfPosition.get(i).x, kfPosition.get(i).y, pfPosition.get(i).x,
+					pfPosition.get(i).y,insPosition.get(i).x, insPosition.get(i).y);
 			fw.write(s);
 		}
+		
 		fw.closeStream();
 		txtNotice.setText("data saved in:\n" + file);
 	}
 
 	private void updateNoise()
 	{
-		moveNoise = SCALE * Float.parseFloat(textFieldMoveNoise.getText());
+		moveNoise = Float.parseFloat(textFieldMoveNoise.getText());
 		orientNoise = (float) Math.toRadians(Double.parseDouble(textFieldTurnNoise.getText()));
-		senseNoise = SCALE * Float.parseFloat(textFieldSenseNoise.getText());
+		senseNoise = Float.parseFloat(textFieldSenseNoise.getText());
 
-		particleFilter.setNoise(moveNoise, orientNoise, senseNoise);
-		insEstimator.setNoise(moveNoise, orientNoise, senseNoise);
-		mleEstimator.setNoise(moveNoise, orientNoise, senseNoise);
+		particleFilter.setSenseNoise(senseNoise);
+		insEstimator.setSenseNoise(senseNoise);
+		mleEstimator.setSenseNoise(senseNoise);
 	}
 
 	/**
 	 * Use distance measurement to estimate the position
-	 * 
 	 * @param Z
 	 * @return
 	 */
 	private Particle getDisAloneEstimation(float[] Z)
 	{
 		mleEstimator = new ParticleFilter(PARTICLES_NUM, landmarks, WORLD_WIDTH, WORLD_HEIGHT);
-		mleEstimator.setNoise(moveNoise, orientNoise, senseNoise);
+		mleEstimator.setSenseNoise(senseNoise);
 
 		try
 		{
@@ -283,7 +258,6 @@ public class Simulate extends JFrame
 			return mleEstimator.getEapPosition();
 		} catch (Exception e)
 		{
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;
@@ -308,8 +282,8 @@ public class Simulate extends JFrame
 			{
 				updateNoise();
 
-				float x = e.getX();
-				float y = e.getY();
+				float x = e.getX() / SCALE;
+				float y = e.getY() / SCALE;
 
 				try
 				{
@@ -317,44 +291,44 @@ public class Simulate extends JFrame
 					{
 						float deltax = x - truePosition.getLast().x;
 						float deltay = y - truePosition.getLast().y;
-						float foward = (float) Math.sqrt(deltax * deltax + deltay * deltay);
-						float direction = (float) Math.atan2(deltay, deltax);
+
+						//simulate the move sensing error
+						float foward = (float) Math.sqrt(deltax * deltax + deltay * deltay)
+								+ (float) random.nextGaussian() * moveNoise;
+						float direction = (float) Math.atan2(deltay, deltax)
+								+ (float) random.nextGaussian() * orientNoise+0.1f; // system error?
 
 						insEstimator.move(direction, foward);
 						insError += (Utils.distance(insEstimator.x, insEstimator.y, x, y) - insError)
-								/ (truePosition.size() + 1) / SCALE;
+								/ (truePosition.size() + 1);
 						insPosition.add(new Point2D(insEstimator.x, insEstimator.y));
-
-						particleFilter.move(direction, foward);
 
 						double[][] pdr = { { deltax, 0 }, { 0, deltay } };
 						kalmanFilter.setStateTransitModelF(new Matrix(pdr));
 						//kalmanFilter.setProcessNoiseCovQ(foward*moveNoise); //Set transit Noise about distance.
+
+						particleFilter.move(direction, foward);
 					} else
 					{
-						insEstimator.set(x, y, 0, 0);//initial
+						insEstimator.set(x, y, 0, 0);  //initial
 						insPosition.add(new Point2D(x, y));
 					}
-
 					truePosition.add(new Point2D(x, y));
 
-					Particle p = new Particle(landmarks, WORLD_WIDTH, WORLD_HEIGHT);
-					p.setNoise(moveNoise, orientNoise, senseNoise);
-					p.set(x, y, 0, 0);
-					float[] Z = p.simulateSense();
-					
+					float[] Z = Utils.simulateSense(landmarks, senseNoise, new Point2D(x, y));
+
 					particleFilter.reSample(Z);
-					p = particleFilter.getEapPosition();
+					Particle p = particleFilter.getEapPosition();
 					pfPosition.add(new Point2D(p.x, p.y));
-					pfError += (Utils.distance(p.x, p.y, x, y) - pfError) / truePosition.size() / SCALE;
+					pfError += (Utils.distance(p.x, p.y, x, y) - pfError) / truePosition.size();
 
 					p = getDisAloneEstimation(Z);
 					mlePosition.add(new Point2D(p.x, p.y));
-					mleError += (Utils.distance(p.x, p.y, x, y) - mleError) / truePosition.size() / SCALE;
+					mleError += (Utils.distance(p.x, p.y, x, y) - mleError) / truePosition.size();
 
 					double[] mlePos = { p.x, p.y };
 					Matrix zMatrix = new Matrix(mlePos).trans();
-					
+
 					if (kalmanFilter == null)
 					{
 						kalmanFilter = new KalmanFilter(2, 2);
@@ -365,7 +339,7 @@ public class Simulate extends JFrame
 						Matrix state = kalmanFilter.filter(zMatrix);
 						Point2D pos = new Point2D(state.value(0, 0), state.value(1, 0));
 						kfPosition.add(pos);
-						kfError += (Utils.distance(pos.x, pos.y, x, y) - kfError) / truePosition.size() / SCALE;
+						kfError += (Utils.distance(pos.x, pos.y, x, y) - kfError) / truePosition.size();
 					}
 				} catch (Exception ex)
 				{

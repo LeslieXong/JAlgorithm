@@ -10,9 +10,9 @@ public class ParticleFilter {
 
     public Particle[] particles;
     int particlesNum = 0;
-    Random random = new Random();
+    private Random random = new Random();
 
-    public ParticleFilter(int numParticles, Point2D[] landmarks, int width, int height) {
+    public ParticleFilter(int numParticles, Point2D[] landmarks, float width, float height) {
         this.particlesNum = numParticles;
 
         particles = new Particle[numParticles];
@@ -21,16 +21,15 @@ public class ParticleFilter {
         }
     }
 
-    public void setNoise(float fNoise, float oNoise, float sNoise) {
+    public void setSenseNoise(float senseNoise) {
         for (int i = 0; i < particlesNum; i++) {
-            particles[i].setNoise(fNoise, oNoise, sNoise);
+            particles[i].setSenseNoise(senseNoise);
         }
     }
 
     /**
      * Moves the particle's position(propagate)
-     * TODO INS error should consider system error other than random error
-     * @param orient value, in radians
+     * @param orient value in radian
      * @param forward move value, must be >= 0
      */
     public void move(float orient, float forward) throws Exception {
@@ -57,7 +56,7 @@ public class ParticleFilter {
             }
             new_particles[i] = new Particle(particles[index].landmarks, particles[index].worldWidth, particles[index].worldHeight);
             new_particles[i].set(particles[index].x, particles[index].y, particles[index].orientation, particles[index].probability);
-            new_particles[i].setNoise(particles[index].forwardNoise, particles[index].orientationNoise, particles[index].senseNoise);
+            new_particles[i].setSenseNoise(particles[index].senseStd);
         }
 
         particles = new_particles;        
@@ -110,7 +109,7 @@ public class ParticleFilter {
             Logger.getLogger(ParticleFilter.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        p.setNoise(particles[0].forwardNoise, particles[0].orientationNoise, particles[0].senseNoise);
+        p.setSenseNoise(particles[0].senseStd);
         
         return p;
     }
