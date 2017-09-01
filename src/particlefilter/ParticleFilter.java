@@ -66,7 +66,7 @@ public class ParticleFilter {
 			}
 		}
         
-        if(sum==0) //the should re initial particles
+        if(sum==0) //the should re initial particles?
         {
 //        	particles = new Particle[numParticles];
 //        	for (int i = 0; i < numParticles; i++) {
