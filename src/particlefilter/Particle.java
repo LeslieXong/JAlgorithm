@@ -11,10 +11,10 @@ import util.Point2D;
  */
 public class Particle extends Point2D{
     public float senseStd; //stand deviation
-    public float orientation;
+    public float direction;
     public float worldWidth;
     public float worldHeight;
-    public double probability = 0;
+    public double weight = 0;
     public Point2D[] landmarks;
     private Random random;
     
@@ -32,7 +32,7 @@ public class Particle extends Point2D{
         random = new Random();
         x = random.nextFloat() * width;
         y = random.nextFloat() * height;
-        orientation = random.nextFloat() * 2f * ((float)Math.PI);
+        direction = random.nextFloat() * 2f * ((float)Math.PI);
         senseStd = 0f;        
     }
 
@@ -41,24 +41,24 @@ public class Particle extends Point2D{
      * 
      * @param x new x position of the particle
      * @param y new y position of the particle
-     * @param orientation new orientation of the particle, in radians
+     * @param direction new orientation of the particle, in radians
      * @param prob new probability of the particle between 0 and 1
      * @throws Exception 
      */
-    public void set(float x, float y, float orientation, double prob) throws Exception {
+    public void set(float x, float y, float direction, double prob) throws Exception {
         if(x < 0 || x >= worldWidth) {
             throw new Exception("X coordinate out of bounds");
         }
         if(y < 0 || y >= worldHeight) {
             throw new Exception("Y coordinate out of bounds");
         }
-        if(orientation < 0 || orientation >= 2 * Math.PI) {
+        if(direction < 0 || direction >= 2 * Math.PI) {
             throw new Exception("X coordinate out of bounds");
         }
         this.x = x;
         this.y = y;
-        this.orientation = orientation;
-        this.probability = prob;
+        this.direction = direction;
+        this.weight = prob;
     }
     
     /**
@@ -76,38 +76,54 @@ public class Particle extends Point2D{
     /**
      * Moves the particle's position(propagate)
      * TODO INS error should consider system error other than random error
-     * @param orient value, in radians
+     * @param direction value, in radians
      * @param forward move value, must be >= 0
      */
-    public void move(float orient, float forward) throws Exception {
+    public void move(float direction, float forward) throws Exception {
         if(forward < 0) {
             throw new Exception("target cannot move backwards");
         }
         
-        orientation = orient;
-        orientation = circle(orientation, 2f * (float)Math.PI);
-        
-        x += Math.cos(orientation) * forward;
-        y += Math.sin(orientation) * forward;
-        x = circle(x, worldWidth);
+        this.direction = circle(direction, 2f * (float)Math.PI);;
+       
+        x += Math.cos(direction) * forward;
+        y += Math.sin(direction) * forward;
+        x = circle(x, worldWidth);   //TODO in real application this should be removed
         y = circle(y, worldHeight);
     }
     
     /**
-     * Calculates the probability of particle based on measurement
+     * Calculates the probability of particle based on all measurement
      * 
      * @param measurement distance measurements 
-     * @return the probability of the particle being correct, between 0 and 1
      */
-    public double likelihood(float[] measurement) {
+    public void likelihood(float[] measurement) {
         double likeli = 1.0;
         for(int i=0;i<landmarks.length;i++) {
             float dist = (float) Utils.distance(x, y, landmarks[i].x, landmarks[i].y);            
             likeli *= Utils.gaussianPdf(dist, senseStd, measurement[i]);            
         }      
-        
-        probability = likeli;
-        return likeli;
+        weight = likeli;
+    }
+    
+    /**
+     * just use the nearest on beacon as measurement
+     * @param measurement
+     */
+    public void likelihood2(float[] measurement) {
+    	float min=measurement[0];
+    	int minIndex=0;
+    	for (int i=0;i<measurement.length;i++)
+		{
+    		if (measurement[i]<min)
+    		{
+    			min=measurement[i];
+    			minIndex=i;
+    		}
+		}
+    	
+    	float dist = (float) Utils.distance(x, y, landmarks[minIndex].x, landmarks[minIndex].y);   
+        weight =  Utils.gaussianPdf(dist, senseStd, measurement[minIndex]);  ;
     }
     
     private float circle(float num, float length) {         
@@ -118,7 +134,7 @@ public class Particle extends Point2D{
     
     @Override
     public String toString() {
-        return "[x=" + x + " y=" + y + " orient=" + Math.toDegrees(orientation) + " prob=" +probability +  "]";
+        return "[x=" + x + " y=" + y + " orient=" + Math.toDegrees(direction) + " prob=" +weight +  "]";
     }
     
 }

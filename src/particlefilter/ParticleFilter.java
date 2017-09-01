@@ -1,9 +1,7 @@
 package particlefilter;
 
+import java.util.LinkedList;
 import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import util.Point2D;
 
 public class ParticleFilter {
@@ -31,35 +29,115 @@ public class ParticleFilter {
      * Moves the particle's position(propagate)
      * @param orient value in radian
      * @param forward move value, must be >= 0
+     * @throws Exception 
      */
-    public void move(float orient, float forward) throws Exception {
-        for (int i = 0; i < particlesNum; i++) {
-            particles[i].move(orient, forward);
+    public void move(float direction, float forward) throws Exception {
+        for (Particle p:particles) {
+            p.move(direction, forward);
         }
     }
-
-    public void reSample(float[] measurement) throws Exception {
-        Particle[] new_particles = new Particle[particlesNum];
-
-        for (int i = 0; i < particlesNum; i++) {
-            particles[i].likelihood(measurement);
+    
+    //Return the index where to insert item x in list a, assuming a is sorted.
+    public int BisectLeft(LinkedList<Double> list,double num)
+    {
+    	int high=list.size();
+    	int low=0;
+    	while (low<high)
+    	{
+    		int mid=(low+high)/2;
+    		if (list.get(mid)<num)
+    			low=mid+1;
+    		else
+    			high=mid;
+    	}
+    	return low;
+    }
+    
+    public void reSample2() throws Exception
+    {
+    	double sum = 0.0;
+    	LinkedList<Particle> state=new LinkedList<>();
+        for (Particle particle : particles)
+		{
+        	if (particle.weight>0)
+			{
+				state.add(particle);
+				sum+=particle.weight;
+			}
+		}
+        
+        if(sum==0) //the should re initial particles
+        {
+//        	particles = new Particle[numParticles];
+//        	for (int i = 0; i < numParticles; i++) {
+//        		particles[i] = new Particle(landmarks, width, height);
+//        	}
         }
+        
+        double accum = 0.0;
+        LinkedList<Double> weightDistribution=new LinkedList<>();
+        for (Particle particle : state)
+		{
+			accum += particle.weight/sum;
+			weightDistribution.add(accum);
+		}
+        
+        Particle[] new_particles = new Particle[particlesNum];
+        for (int i = 0; i < particlesNum; i++) {
+        	int index=BisectLeft(weightDistribution, random.nextDouble());
+        	Particle particle=state.get(index);  //!can not use new_particles[i]=particle
+        	new_particles[i] =new Particle(particle.landmarks, particle.worldWidth, particle.worldHeight);
+            new_particles[i].set(particle.x, particle.y, particle.direction,particle.weight);
+            new_particles[i].setSenseNoise(particle.senseStd);
+        }
+        
+        particles=new_particles ;
+    }
+   
+    public void reSample() throws Exception {
+        Particle[] new_particles = new Particle[particlesNum];
         
         float beta = 0f;
         Particle best = getMapPosition();
         int index = (int) random.nextFloat() * particlesNum;
         for (int i = 0; i < particlesNum; i++) {
-            beta += random.nextFloat() * 2f * best.probability;
-            while (beta > particles[index].probability) {
-                beta -= particles[index].probability;
+            beta += random.nextFloat() * 2f * best.weight;
+            while (beta > particles[index].weight) {
+                beta -= particles[index].weight;
                 index = circle(index + 1, particlesNum);
             }
-            new_particles[i] = new Particle(particles[index].landmarks, particles[index].worldWidth, particles[index].worldHeight);
-            new_particles[i].set(particles[index].x, particles[index].y, particles[index].orientation, particles[index].probability);
-            new_particles[i].setSenseNoise(particles[index].senseStd);
+            Particle particle=particles[index];
+            new_particles[i] = new Particle(particle.landmarks, particle.worldWidth, particle.worldHeight);
+            new_particles[i].set(particle.x, particle.y, particle.direction, particle.weight);
+            new_particles[i].setSenseNoise(particle.senseStd);
         }
 
         particles = new_particles;        
+    }
+    
+    /**
+     * EAP estimation:expected a posterior
+     * @return
+     */
+    public Point2D getEapPosition(float[] measurement) {
+    	double sumWeight=0; 
+    	for (Particle p:particles) {
+             p.likelihood(measurement);
+             sumWeight+=p.weight;
+         }
+    	
+    	//normalization
+    	for (Particle p:particles) {
+            p.weight/=sumWeight;
+        }
+    	 
+        Point2D pos=new Point2D();
+        for(Particle p:particles) {
+            pos.x += p.x*p.weight;
+            pos.y += p.y*p.weight;
+        }
+        
+        return pos;
     }
 
     private int circle(int num, int length) {
@@ -76,44 +154,16 @@ public class ParticleFilter {
      * MAP estimation:Max a Posterior
      * @return
      */
-    public Particle getMapPosition() {
+    private Particle getMapPosition() {
         Particle particle = particles[0];
         for (int i = 0; i < particlesNum; i++) {
-            if (particles[i].probability > particle.probability) {
+            if (particles[i].weight>particle.weight){
                 particle = particles[i];
             }
         }
         return particle;
     }
     
-    /**
-     * EAP estimation:expected a posterior
-     * @return
-     */
-    public Particle getEapPosition() {
-        Particle p = new Particle(particles[0].landmarks, particles[0].worldWidth, particles[0].worldHeight);
-        float x = 0, y = 0, orient = 0, prob = 0;
-        for(int i=0;i<particlesNum;i++) {
-            x += particles[i].x;
-            y += particles[i].y;
-            orient += particles[i].orientation;
-            prob += particles[i].probability;
-        }
-        x /= particlesNum;
-        y /= particlesNum;
-        orient /= particlesNum;
-        prob /= particlesNum;
-        try {
-            p.set(x, y, orient, prob);
-        } catch (Exception ex) {
-            Logger.getLogger(ParticleFilter.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-        p.setSenseNoise(particles[0].senseStd);
-        
-        return p;
-    }
-
     @Override
     public String toString() {
         String res = "";

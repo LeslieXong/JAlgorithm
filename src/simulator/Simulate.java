@@ -10,6 +10,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.List;
+import java.awt.Point;
 
 import javax.swing.JTextField;
 import java.awt.event.ActionListener;
@@ -54,11 +55,11 @@ public class Simulate extends JFrame
 
 	private KalmanFilter kalmanFilter;
 
-	final Point2D[] landmarks = new Point2D[] { new Point2D(105, 160f), new Point2D(625, 420f),
+	private static final Point2D[] landmarks = new Point2D[] { new Point2D(105, 160f), new Point2D(625, 420f),
 			new Point2D(225f, 400f), new Point2D(399f, 250f),
 			new Point2D(630, 140f), new Point2D(337f, 42f) };
 
-	final int PARTICLES_NUM = 3000;
+	final int PARTICLES_NUM = 2000;
 	final float WORLD_WIDTH = 75f, WORLD_HEIGHT = 50f;
 	final int G_MARGIN_X = 12, G_MARGIN_Y = 35;
 	final float SCALE = 10f;  //pixel per meter
@@ -83,7 +84,7 @@ public class Simulate extends JFrame
 	private boolean showParticles = true;
 
 	private float moveNoise = 1;
-	private float orientNoise = 5;
+	private float orientNoise = 8;
 	private float senseNoise = 3;
 
 	private LinkedList<Point2D> truePosition = new LinkedList<Point2D>();
@@ -125,7 +126,7 @@ public class Simulate extends JFrame
 		kfError = 0;
 		mleError = 0;
 		random = new Random();
-		kalmanFilter=null;
+		kalmanFilter = null;
 
 		truePosition = new LinkedList<Point2D>();
 		kfPosition = new LinkedList<Point2D>();
@@ -155,19 +156,19 @@ public class Simulate extends JFrame
 		paint(g);
 	}
 
-	private void drawPoints(boolean ifdraw, Color color,Object[] points, int r)
+	private void drawPoints(boolean ifdraw, Color color, Object[] points, int r)
 	{
-		if(ifdraw)
+		if (ifdraw)
 		{
 			graphics.setPaint(color);
 			for (Object o : points)
 			{
-				Point2D p=(Point2D) o;
-				graphics.fillOval((int) (p.x * SCALE)-r/2, (int) (p.y * SCALE)-r/2, r, r);
+				Point2D p = (Point2D) o;
+				graphics.fillOval((int) (p.x * SCALE) - r / 2, (int) (p.y * SCALE) - r / 2, r, r);
 			}
 		}
 	}
-	
+
 	@Override
 	public void paint(Graphics g)
 	{
@@ -179,24 +180,25 @@ public class Simulate extends JFrame
 		graphics.drawRect(0, 0, drawWidth - 1, drawHeight - 1);
 
 		/* Draw all landmarks *************************************************/
-		drawPoints(true, Color.CYAN, landmarks, 15);
+		drawPoints(true, Color.CYAN, landmarks, 12);
+
 		/* Draw the true trajectory ********************************************/
 		drawPoints(true, Color.RED, truePosition.toArray(), 15);
 
 		/* Draw all particles *************************************************/
-		int size=particleFilter.particles.length;
-		Point2D[] particles=new Point2D[size];
-		for (int i=0;i<size;i++)
+		int size = particleFilter.particles.length;
+		Point2D[] particles = new Point2D[size];
+		for (int i = 0; i < size; i++)
 		{
-			particles[i]=new Point2D(particleFilter.particles[i].x,particleFilter.particles[i].y);
+			particles[i] = new Point2D(particleFilter.particles[i].x, particleFilter.particles[i].y);
 		}
 		drawPoints(showParticles, Color.PINK, particles, 2);
-		
+
 		drawPoints(showMLE, Color.YELLOW, mlePosition.toArray(), 10);
 		drawPoints(showKF, Color.GREEN, kfPosition.toArray(), 10);
 		drawPoints(showPF, Color.BLUE, pfPosition.toArray(), 10);
 		drawPoints(showINS, Color.magenta, insPosition.toArray(), 10);
-	
+
 		/* Draw current position info ********************************************/
 		if (truePosition.size() > 0)
 		{
@@ -223,11 +225,11 @@ public class Simulate extends JFrame
 		{
 			String s = String.format("%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\n",
 					truePosition.get(i).x, truePosition.get(i).y, mlePosition.get(i).x,
-					mlePosition.get(i).y,kfPosition.get(i).x, kfPosition.get(i).y, pfPosition.get(i).x,
-					pfPosition.get(i).y,insPosition.get(i).x, insPosition.get(i).y);
+					mlePosition.get(i).y, kfPosition.get(i).x, kfPosition.get(i).y, pfPosition.get(i).x,
+					pfPosition.get(i).y, insPosition.get(i).x, insPosition.get(i).y);
 			fw.write(s);
 		}
-		
+
 		fw.closeStream();
 		txtNotice.setText("data saved in:\n" + file);
 	}
@@ -245,18 +247,18 @@ public class Simulate extends JFrame
 
 	/**
 	 * Use distance measurement to estimate the position
+	 * 
 	 * @param Z
 	 * @return
 	 */
-	private Particle getDisAloneEstimation(float[] Z)
+	private Point2D getDisAloneEstimation(float[] Z)
 	{
 		mleEstimator = new ParticleFilter(PARTICLES_NUM, landmarks, WORLD_WIDTH, WORLD_HEIGHT);
 		mleEstimator.setSenseNoise(senseNoise);
 
 		try
 		{
-			mleEstimator.reSample(Z);
-			return mleEstimator.getEapPosition();
+			return mleEstimator.getEapPosition(Z);
 		} catch (Exception e)
 		{
 			e.printStackTrace();
@@ -293,20 +295,20 @@ public class Simulate extends JFrame
 						float deltax = x - truePosition.getLast().x;
 						float deltay = y - truePosition.getLast().y;
 
-						//simulate the move sensing error
+						//simulate the move sensing observing
 						float foward = (float) Math.sqrt(deltax * deltax + deltay * deltay)
-								+ (float) random.nextGaussian() * moveNoise;
+								+ (float) random.nextGaussian() * moveNoise;  //may <0?
 						float direction = (float) Math.atan2(deltay, deltax)
-								+ (float) random.nextGaussian() * orientNoise+0.1f; // system error?
+								+ (float) random.nextGaussian() * orientNoise + 0.1f; // system error,radians?
 
 						insEstimator.move(direction, foward);
 						insError += (Utils.distance(insEstimator.x, insEstimator.y, x, y) - insError)
 								/ (truePosition.size() + 1);
 						insPosition.add(new Point2D(insEstimator.x, insEstimator.y));
 
-						double[][] pdr = { { deltax, 0 }, { 0, deltay } };
+						double[][] pdr = { { foward * Math.cos(direction), 0 }, { 0, foward * Math.cos(direction) } };
 						kalmanFilter.setStateTransitModelF(new Matrix(pdr));
-						kalmanFilter.setProcessNoiseCovQ(moveNoise); //Set transit Noise about distance.
+						kalmanFilter.setProcessNoiseCovQ(moveNoise * 1.3f);  //Set transit Noise include angle error
 
 						particleFilter.move(direction, foward);
 					} else
@@ -318,27 +320,27 @@ public class Simulate extends JFrame
 
 					float[] Z = Utils.simulateSense(landmarks, senseNoise, new Point2D(x, y));
 
-					particleFilter.reSample(Z);
-					Particle p = particleFilter.getEapPosition();
-					pfPosition.add(new Point2D(p.x, p.y));
-					pfError += (Utils.distance(p.x, p.y, x, y) - pfError) / truePosition.size();
+					Point2D pos = particleFilter.getEapPosition(Z);
+					particleFilter.reSample2();
+					pfPosition.add(new Point2D(pos.x, pos.y));
+					pfError += (Utils.distance(pos.x, pos.y, x, y) - pfError) / truePosition.size();
 
-					p = getDisAloneEstimation(Z);
-					mlePosition.add(new Point2D(p.x, p.y));
-					mleError += (Utils.distance(p.x, p.y, x, y) - mleError) / truePosition.size();
+					pos = getDisAloneEstimation(Z);
+					mlePosition.add(new Point2D(pos.x, pos.y));
+					mleError += (Utils.distance(pos.x, pos.y, x, y) - mleError) / truePosition.size();
 
-					double[] mlePos = { p.x, p.y };
+					double[] mlePos = { pos.x, pos.y };
 					Matrix zMatrix = new Matrix(mlePos).trans();
 
 					if (kalmanFilter == null)
 					{
 						kalmanFilter = new KalmanFilter(2, 2);
-						kalmanFilter.setCurrentState(zMatrix, new Matrix(2, senseNoise)); //TODO prior error
+						kalmanFilter.setCurrentState(zMatrix, new Matrix(2, senseNoise * 0.5));
 					} else
 					{
-						kalmanFilter.setObsvNoiseCovR(senseNoise);
+						kalmanFilter.setObsvNoiseCovR(senseNoise * 0.5);
 						Matrix state = kalmanFilter.filter(zMatrix);
-						Point2D pos = new Point2D(state.value(0, 0), state.value(1, 0));
+						pos = new Point2D(state.value(0, 0), state.value(1, 0));
 						kfPosition.add(pos);
 						kfError += (Utils.distance(pos.x, pos.y, x, y) - kfError) / truePosition.size();
 					}

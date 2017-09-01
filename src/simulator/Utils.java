@@ -18,7 +18,7 @@ public class Utils
 	public static double gaussianPdf(double mean, double std, double x)
 	{
 		return Math.exp(-(Math.pow(mean - x, 2)) / (2.0 * Math.pow(std, 2)))
-				/ Math.sqrt(2.0 * Math.PI * Math.pow(std, 2));
+				/ (std*Math.sqrt(2.0 * Math.PI));
 	}
 	
 	
