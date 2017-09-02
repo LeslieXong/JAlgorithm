@@ -49,15 +49,14 @@ public class Simulate extends JFrame
 	private static final long serialVersionUID = 1L;
 
 	private ParticleFilter particleFilter;
-	private ParticleFilter mleEstimator;//Use this to get EAP position of distance measurement alone,without INS
 	private Particle insEstimator;
 	private Random random;
 
 	private KalmanFilter kalmanFilter;
 
-	private static final Point2D[] landmarks = new Point2D[] { new Point2D(105, 160f), new Point2D(625, 420f),
-			new Point2D(225f, 400f), new Point2D(399f, 250f),
-			new Point2D(630, 140f), new Point2D(337f, 42f) };
+	private static final Point2D[] landmarks = new Point2D[] { new Point2D(10.5, 16.0f), new Point2D(62.5, 42.0f),
+			new Point2D(22.5f, 40.0f), new Point2D(39.9f, 25.0f),
+			new Point2D(63.0, 14.0f), new Point2D(33.7f, 4.2f) };
 
 	final int PARTICLES_NUM = 2000;
 	final float WORLD_WIDTH = 75f, WORLD_HEIGHT = 50f;
@@ -139,10 +138,7 @@ public class Simulate extends JFrame
 
 		particleFilter = new ParticleFilter(PARTICLES_NUM, landmarks, WORLD_WIDTH, WORLD_HEIGHT);
 		particleFilter.setSenseNoise(senseNoise);
-
-		mleEstimator = new ParticleFilter(PARTICLES_NUM, landmarks, WORLD_WIDTH, WORLD_HEIGHT);
-		mleEstimator.setSenseNoise(senseNoise);
-
+		
 		drawWidth = (int) (WORLD_WIDTH * SCALE);
 		drawHeight = (int) (WORLD_HEIGHT * SCALE);
 		image = new BufferedImage(drawWidth, (int) drawHeight, BufferedImage.BITMASK);
@@ -242,7 +238,6 @@ public class Simulate extends JFrame
 
 		particleFilter.setSenseNoise(senseNoise);
 		insEstimator.setSenseNoise(senseNoise);
-		mleEstimator.setSenseNoise(senseNoise);
 	}
 
 	/**
@@ -253,12 +248,12 @@ public class Simulate extends JFrame
 	 */
 	private Point2D getDisAloneEstimation(float[] Z)
 	{
-		mleEstimator = new ParticleFilter(PARTICLES_NUM, landmarks, WORLD_WIDTH, WORLD_HEIGHT);
+		ParticleFilter mleEstimator = new ParticleFilter(PARTICLES_NUM, landmarks, WORLD_WIDTH, WORLD_HEIGHT);
 		mleEstimator.setSenseNoise(senseNoise);
 
 		try
 		{
-			return mleEstimator.getEapPosition(Z);
+			return mleEstimator.getEapPosition(Z,1);
 		} catch (Exception e)
 		{
 			e.printStackTrace();
@@ -320,7 +315,7 @@ public class Simulate extends JFrame
 
 					float[] Z = Utils.simulateSense(landmarks, senseNoise, new Point2D(x, y));
 
-					Point2D pos = particleFilter.getEapPosition(Z);
+					Point2D pos = particleFilter.getEapPosition(Z,0);
 					particleFilter.reSample2();
 					pfPosition.add(new Point2D(pos.x, pos.y));
 					pfError += (Utils.distance(pos.x, pos.y, x, y) - pfError) / truePosition.size();

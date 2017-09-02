@@ -55,30 +55,20 @@ public class ParticleFilter {
     
     public void reSample2() throws Exception
     {
-    	double sum = 0.0;
     	LinkedList<Particle> state=new LinkedList<>();
         for (Particle particle : particles)
 		{
         	if (particle.weight>0)
 			{
 				state.add(particle);
-				sum+=particle.weight;
 			}
 		}
-        
-        if(sum==0) //the should re initial particles?
-        {
-//        	particles = new Particle[numParticles];
-//        	for (int i = 0; i < numParticles; i++) {
-//        		particles[i] = new Particle(landmarks, width, height);
-//        	}
-        }
         
         double accum = 0.0;
         LinkedList<Double> weightDistribution=new LinkedList<>();
         for (Particle particle : state)
 		{
-			accum += particle.weight/sum;
+			accum += particle.weight;
 			weightDistribution.add(accum);
 		}
         
@@ -117,15 +107,20 @@ public class ParticleFilter {
     
     /**
      * EAP estimation:expected a posterior
+     * @param beaconUse 0 use nearest beacon to achieve PF, 1 use all beacon measurement
      * @return
      */
-    public Point2D getEapPosition(float[] measurement) {
+    public Point2D getEapPosition(float[] measurement,int beaconUse) {
     	double sumWeight=0; 
     	for (Particle p:particles) {
-             p.likelihood(measurement);
+    		if(beaconUse==0)
+    			p.likelihood2(measurement);
+    		else
+    			p.likelihood(measurement);
              sumWeight+=p.weight;
          }
     	
+    	//System.out.println(sumWeight);
     	//normalization
     	for (Particle p:particles) {
             p.weight/=sumWeight;
