@@ -58,7 +58,7 @@ public class Simulate extends JFrame
 			new Point2D(22.5f, 40.0f), new Point2D(39.9f, 25.0f),
 			new Point2D(63.0, 14.0f), new Point2D(33.7f, 4.2f) };
 
-	final int PARTICLES_NUM = 2000;
+	final int PARTICLES_NUM = 3000;
 	final float WORLD_WIDTH = 75f, WORLD_HEIGHT = 50f;
 	final int G_MARGIN_X = 12, G_MARGIN_Y = 35;
 	final float SCALE = 10f;  //pixel per meter
@@ -315,7 +315,7 @@ public class Simulate extends JFrame
 
 					float[] Z = Utils.simulateSense(landmarks, senseNoise, new Point2D(x, y));
 
-					Point2D pos = particleFilter.getEapPosition(Z,0);
+					Point2D pos = particleFilter.getEapPosition(Z,1);
 					particleFilter.reSample2();
 					pfPosition.add(new Point2D(pos.x, pos.y));
 					pfError += (Utils.distance(pos.x, pos.y, x, y) - pfError) / truePosition.size();
